@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom'; // أضف useNavigate
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import RatingStars from '../../../components/RatingStars';
-import { useDispatch, useSelector } from 'react-redux'; // أضف useSelector
+import { useDispatch, useSelector } from 'react-redux';
 import { useFetchProductByIdQuery } from '../../../redux/features/products/productsApi';
 import { addToCart } from '../../../redux/features/cart/cartSlice';
 import ReviewsCard from '../reviews/ReviewsCard';
@@ -9,35 +9,42 @@ import ReviewsCard from '../reviews/ReviewsCard';
 const SingleProduct = () => {
     const { id } = useParams();
     const dispatch = useDispatch();
-    const navigate = useNavigate(); // استخدم useNavigate للتوجيه
+    const navigate = useNavigate();
     const { data, error, isLoading } = useFetchProductByIdQuery(id);
 
-    // تحقق من حالة المستخدم
     const { user } = useSelector((state) => state.auth);
 
     const singleProduct = data?.product || {};
     const productReviews = data?.reviews || [];
 
-    // حالة لتتبع الصورة الحالية
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [selectedSize, setSelectedSize] = useState(singleProduct.size || ''); // حالة لحجم الحناء المختار
 
     const handleAddToCart = (product) => {
-        // إذا لم يكن المستخدم مسجلًا، قم بتوجيهه إلى صفحة التسجيل
         if (!user) {
-            navigate('/login'); // توجيه إلى صفحة التسجيل
+            navigate('/login');
             return;
         }
-        dispatch(addToCart(product));
+
+        // إذا كان المنتج حناء بودر ولم يتم اختيار حجم
+        if (product.category === 'حناء بودر' && !selectedSize) {
+            alert('الرجاء اختيار حجم الحناء');
+            return;
+        }
+
+        // إضافة المنتج إلى السلة مع الحجم المختار
+        dispatch(addToCart({
+            ...product,
+            ...(product.category === 'حناء بودر' && { size: selectedSize })
+        }));
     };
 
-    // التبديل إلى الصورة التالية
     const nextImage = () => {
         setCurrentImageIndex((prevIndex) =>
             prevIndex === singleProduct.image.length - 1 ? 0 : prevIndex + 1
         );
     };
 
-    // التبديل إلى الصورة السابقة
     const prevImage = () => {
         setCurrentImageIndex((prevIndex) =>
             prevIndex === 0 ? singleProduct.image.length - 1 : prevIndex - 1
@@ -71,11 +78,10 @@ const SingleProduct = () => {
                                     alt={singleProduct.name}
                                     className='rounded-md w-full h-auto'
                                     onError={(e) => {
-                                        e.target.src = "https://via.placeholder.com/500"; // صورة بديلة في حالة الخطأ
+                                        e.target.src = "https://via.placeholder.com/500";
                                         e.target.alt = "Image not found";
                                     }}
                                 />
-                                {/* أزرار التنقل بين الصور */}
                                 {singleProduct.image.length > 1 && (
                                     <>
                                         <button
@@ -111,7 +117,36 @@ const SingleProduct = () => {
                         {/* معلومات إضافية عن المنتج */}
                         <div className='flex flex-col space-y-2'>
                             <p><strong>الفئة:</strong> {singleProduct.category}</p>
-                            <p><strong>اللون:</strong> {singleProduct.color}</p>
+                            {singleProduct.category === 'حناء بودر' && (
+                                <>
+                                    <p><strong>الحجم المتاح:</strong> {singleProduct.size}</p>
+                                    <div className="flex flex-col gap-2 mb-4">
+  <label className="text-gray-700 font-medium">اختر الحجم:</label>
+  <div className="grid grid-cols-2 gap-3">
+    <button
+      onClick={() => setSelectedSize("500 جرام")}
+      className={`py-2 px-4 rounded-lg border-2 transition-all duration-200 ${
+        selectedSize === "500 جرام"
+          ? "bg-primary text-white border-primary"
+          : "bg-white text-gray-700 border-gray-300 hover:border-primary"
+      }`}
+    >
+      500 جرام
+    </button>
+    <button
+      onClick={() => setSelectedSize("1 كيلو")}
+      className={`py-2 px-4 rounded-lg border-2 transition-all duration-200 ${
+        selectedSize === "1 كيلو"
+          ? "bg-primary text-white border-primary"
+          : "bg-white text-gray-700 border-gray-300 hover:border-primary"
+      }`}
+    >
+      1 كيلو
+    </button>
+  </div>
+</div>
+                                </>
+                            )}
                             <div className='flex gap-1 items-center'>
                                 <strong>التقييم: </strong>
                                 <RatingStars rating={singleProduct.rating} />

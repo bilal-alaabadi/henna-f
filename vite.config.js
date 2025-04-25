@@ -6,7 +6,7 @@ export default defineConfig({
     server: {
         proxy: {
             '/api': {
-                target: 'https://lebaba-ecommerce-backend-app-snowy.vercel.app', // رابط الخادم الخلفي
+                target: 'http://localhost:5173', // رابط الخادم الخلفي
                 changeOrigin: true, // تغيير الأصل للخادم الخلفي
                 rewrite: (path) => path.replace(/^\/api/, ''), // إزالة /api من الرابط
             },

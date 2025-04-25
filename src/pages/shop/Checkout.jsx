@@ -1,20 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { RiBankCardLine } from "react-icons/ri";
-import { loadStripe } from "@stripe/stripe-js";
 import { getBaseUrl } from '../../utils/baseURL';
 
 const Checkout = () => {
-  const [province, setProvince] = useState('');
-  const [wilayat, setWilayat] = useState('');
-  const [streetAddress, setStreetAddress] = useState('');
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
-  const [orderNotes, setOrderNotes] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
   const [error, setError] = useState('');
-
   const { products, totalPrice } = useSelector((state) => state.cart);
   const { user } = useSelector(state => state.auth);
 
@@ -30,86 +20,48 @@ const Checkout = () => {
     e.preventDefault();
 
     if (products.length === 0) {
-        setError("لا توجد منتجات في السلة. الرجاء إضافة منتجات قبل المتابعة إلى الدفع.");
-        return;
+      setError("لا توجد منتجات في السلة. الرجاء إضافة منتجات قبل المتابعة إلى الدفع.");
+      return;
     }
 
-    const stripe = await loadStripe(import.meta.env.VITE_STRIPE_PK);
     const body = {
-        products: products.map(product => ({
-            ...product,
-            image: Array.isArray(product.image) ? product.image[0] : product.image
-        })),
-        userId: user?._id,
-        province,
-        wilayat,
-        streetAddress,
-        phone,
-        email,
-        orderNotes,
-        firstName,
-        lastName,
+      products: products.map(product => ({
+        ...product,
+        image: Array.isArray(product.image) ? product.image[0] : product.image
+      })),
+      userId: user?._id,
     };
 
     console.log("Data sent to server:", JSON.stringify(body, null, 2));
 
     const headers = {
-        "Content-Type": "application/json"
+      "Content-Type": "application/json"
     };
 
     try {
-        const response = await fetch(`${getBaseUrl()}/api/orders/create-checkout-session`, {
-            method: "POST",
-            headers: headers,
-            body: JSON.stringify(body)
-        });
+      const response = await fetch(`${getBaseUrl()}/api/orders/create-checkout-session`, {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify(body)
+      });
 
-        const session = await response.json();
-        console.log("Server response:", session);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-        if (session.id) {
-            const result = await stripe.redirectToCheckout({
-                sessionId: session.id
-            });
+      const session = await response.json();
+      console.log("Server response:", session);
 
-            if (result.error) {
-                console.log("Error:", result.error);
-            }
-        } else {
-            console.error("No session ID received from server:", session);
-        }
+      if (session.paymentLink) {
+        window.location.href = session.paymentLink;
+      } else {
+        console.error("No payment link received from server:", session);
+        setError("حدث خطأ أثناء إنشاء رابط الدفع. الرجاء المحاولة مرة أخرى.");
+      }
     } catch (error) {
-        console.error("Error during payment process:", error);
+      console.error("Error during payment process:", error);
+      setError("حدث خطأ أثناء عملية الدفع. الرجاء المحاولة مرة أخرى.");
     }
-  };
-
-  const omanProvinces = [
-    "مسقط",
-    "ظفار",
-    "مسندم",
-    "البريمي",
-    "الوسطى",
-    "الشمالية الشرقية",
-    "الجنوبية الشرقية",
-    "الداخلية",
-    "الظاهرة",
-  ];
-
-  const provincesWithWilayats = {
-    "مسقط": ["مسقط", "مطرح", "بوشر", "السيب", "العامرات"],
-    "ظفار": ["صلالة", "طاقة", "مرباط", "ثمريت", "ضلكوت"],
-    "مسندم": ["خصب", "دبا", "بخا"],
-    "البريمي": ["البريمي", "محضة", "السنينة"],
-    "الوسطى": ["هيما", "محوت", "الدقم"],
-    "الشمالية الشرقية": ["إبراء", "المضيبي", "بدية", "القابل", "وادي بني خالد"],
-    "الجنوبية الشرقية": ["صور", "جعلان بني بو حسن", "جعلان بني بو علي", "الكامل والوافي"],
-    "الداخلية": ["نزوى", "بهلا", "منح", "الحمراء", "سمائل", "أدم", "بدبد"],
-    "الظاهرة": ["عبري", "ينقل", "ضنك"],
-  };
-
-  const handleProvinceChange = (e) => {
-    setProvince(e.target.value);
-    setWilayat('');
   };
 
   return (
@@ -119,119 +71,6 @@ const Checkout = () => {
         <h1 className="text-xl md:text-2xl font-bold mb-4 md:mb-6">تفاصيل الفاتورة</h1>
         {error && <div className="text-red-500 mb-4">{error}</div>}
         <form onSubmit={makePayment} className="space-y-4 md:space-y-6">
-          {/* الاسم الأول واسم العائلة */}
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700">الاسم الأول</label>
-              <input
-                type="text"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
-                required
-              />
-            </div>
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700">اسم العائلة</label>
-              <input
-                type="text"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
-                required
-              />
-            </div>
-          </div>
-
-          {/* المنطقة والولاية */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">المنطقة</label>
-            <select
-              value={province}
-              onChange={handleProvinceChange}
-              className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
-              required
-            >
-              <option value="">اختر المنطقة</option>
-              {omanProvinces.map((province, index) => (
-                <option key={index} value={province}>
-                  {province}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">الولاية</label>
-            <select
-              value={wilayat}
-              onChange={(e) => setWilayat(e.target.value)}
-              className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
-              required
-              disabled={!province}
-            >
-              <option value="">اختر الولاية</option>
-              {province &&
-                provincesWithWilayats[province]?.map((wilayat, index) => (
-                  <option key={index} value={wilayat}>
-                    {wilayat}
-                  </option>
-                ))}
-            </select>
-          </div>
-
-          {/* العنوان */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">العنوان</label>
-            <input
-              type="text"
-              value={streetAddress}
-              onChange={(e) => setStreetAddress(e.target.value)}
-              className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
-              placeholder="رقم المنزل واسم الشارع"
-              required
-            />
-            <input
-              type="text"
-              onChange={(e) => setStreetAddress(e.target.value)}
-              className="mt-2 block w-full p-2 border border-gray-300 rounded-md"
-              placeholder="الشقة، الطابق، إلخ. (اختياري)"
-            />
-          </div>
-
-          {/* رقم الهاتف والبريد الإلكتروني */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">رقم الهاتف</label>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">البريد الإلكتروني</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
-              required
-            />
-          </div>
-
-          {/* ملاحظات الطلب */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">ملاحظات الطلب (اختياري)</label>
-            <textarea
-              value={orderNotes}
-              onChange={(e) => setOrderNotes(e.target.value)}
-              className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
-              placeholder="ملاحظات حول طلبك، مثلاً ملاحظات خاصة للتوصيل."
-            />
-          </div>
-
-          {/* زر إتمام الطلب */}
           <button
             type="submit"
             className="bg-blue-500 text-white px-6 py-3 rounded-md hover:bg-blue-600 w-full"
@@ -260,14 +99,14 @@ const Checkout = () => {
         </div>
 
         <div className="mt-6 pt-6 border-t border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">دفع Stripe</h3>
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">دفع ثواني</h3>
           <button
             onClick={makePayment}
             className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors duration-300 flex items-center justify-center gap-2"
             disabled={products.length === 0}
           >
             <RiBankCardLine className="text-xl" />
-            <span>الدفع باستخدام Stripe</span>
+            <span>الدفع باستخدام ثواني</span>
           </button>
           <p className="mt-4 text-sm text-gray-600">
             سيتم استخدام بياناتك الشخصية لمعالجة طلبك، ودعم تجربتك عبر هذا الموقع، ولأغراض أخرى موضحة في{" "}
