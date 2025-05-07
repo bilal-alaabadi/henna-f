@@ -1,8 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import timings from "../../assets/WhatsApp Image 2025-04-23 at 11.44.04 PM (1).jpeg";
+import timings from "../../assets/Untitled-1-2.png";
 
 const Banner = () => {
+
     return (
         <div className="py-3 px-4">
             <div className="text-right" dir='rtl'>
@@ -10,11 +11,14 @@ const Banner = () => {
             </div>
             
             <div className="mt-8">
-                <img
+                <Link to="/shop">
+                
+                <img 
                     src={timings}
                     alt="صورة البانر"
                     className="w-full h-auto object-contain max-w-[100%] mx-auto"
                 />
+                </Link>
             </div>
         </div>
     );

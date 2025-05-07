@@ -1,147 +1,158 @@
-import React, { useState } from 'react'
-import { formatDate } from '../../../../utils/formateDate';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDeleteProductMutation, useFetchAllProductsQuery } from '../../../../redux/features/products/productsApi';
 
 const ManageProduct = () => {
     const [currentPage, setCurrentPage] = useState(1);
-    const [productsPerPage] = useState(12)
-    const { data: { products = [], totalPages, totalProducts } = {}, isLoading, error, refetch } = useFetchAllProductsQuery({
+    const [productsPerPage] = useState(12);
+    const { 
+        data: { products = [], totalPages = 1, totalProducts = 0 } = {}, 
+        isLoading, 
+        error, 
+        refetch 
+    } = useFetchAllProductsQuery({
         category: '',
-        color: '',
         minPrice: '',
         maxPrice: '',
         page: currentPage,
         limit: productsPerPage,
-    })
+    });
 
-    // pagination
+    const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
+
     const startProduct = (currentPage - 1) * productsPerPage + 1;
-    const endProduct = startProduct + products.length - 1;
+    const endProduct = Math.min(startProduct + productsPerPage - 1, totalProducts);
+
     const handlePageChange = (pageNumber) => {
         if (pageNumber > 0 && pageNumber <= totalPages) {
-            setCurrentPage(pageNumber)
+            setCurrentPage(pageNumber);
         }
-    }
+    };
 
-    const [deleteProduct] = useDeleteProductMutation()
     const handleDeleteProduct = async (id) => {
+        const confirmDelete = window.confirm("هل أنت متأكد أنك تريد حذف هذا المنتج؟");
+        if (!confirmDelete) return;
+        
         try {
-            const response = await deleteProduct(id).unwrap();
-            alert("Product deleted successfully")
-            await refetch()
-
+            await deleteProduct(id).unwrap();
+            alert("تم حذف المنتج بنجاح");
+            // إذا كانت الصفحة الحالية أصبحت فارغة بعد الحذف، نعود للصفحة السابقة
+            if (products.length === 1 && currentPage > 1) {
+                setCurrentPage(currentPage - 1);
+            } else {
+                refetch();
+            }
         } catch (error) {
-            console.error("Error deleting product", error)
+            console.error("خطأ في حذف المنتج", error);
+            alert("فشل في حذف المنتج");
         }
-    }
+    };
 
     return (
-        <>
-            {
-                isLoading && <div>Loading...</div>
+        <div className="container mx-auto p-4">
+            <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="flex flex-col md:flex-row justify-between items-center mb-6">
+                    <h2 className="text-2xl font-bold text-gray-800">إدارة المنتجات</h2>
+                    <div className="flex items-center space-x-4 mt-4 md:mt-0">
+                        <span className="text-sm text-gray-600">
+                            عرض {startProduct}-{endProduct} من {totalProducts} منتج
+                        </span>
+                        <Link 
+                            to="/dashboard/add-product" 
+                            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm"
+                        >
+                            إضافة منتج جديد
+                        </Link>
+                    </div>
+                </div>
 
-            }
-            {
-                error && <div>Error loading products.</div>
-            }
-            <section className="py-1 bg-blueGray-50">
-                <div className="w-full  mb-12 xl:mb-0 px-4 mx-auto">
-                    <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-6 shadow-lg rounded ">
-                        <div className="rounded-t mb-0 px-4 py-3 border-0">
-                            <div className="flex flex-wrap items-center">
-                                <div className="relative w-full px-4 max-w-full flex-grow flex-1">
-                                    <h3 className="font-semibold text-base text-blueGray-700">All Products</h3>
-                                </div>
-                                <div className="relative w-full px-4 max-w-full flex-grow flex-1 text-right">
-                                    <button className="bg-indigo-500 text-white active:bg-indigo-600 text-xs font-bold uppercase px-3 py-1 rounded outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150" type="button">See all</button>
-                                </div>
-                            </div>
-                            <h3 className='my-4  text-sm'>Showing {startProduct} to {endProduct} of {totalProducts} products</h3>
-                        </div>
-
-                        <div className="block w-full overflow-x-auto">
-                            <table className="items-center bg-transparent w-full border-collapse ">
-                                <thead>
+                {isLoading ? (
+                    <div className="text-center py-8">جاري تحميل المنتجات...</div>
+                ) : error ? (
+                    <div className="text-center py-8 text-red-500">حدث خطأ أثناء تحميل المنتجات</div>
+                ) : (
+                    <>
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
                                     <tr>
-                                        <th className="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
-                                            No.
-                                        </th>
-                                        <th className="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
-                                            Product Name
-                                        </th>
-                                        <th className="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
-                                            Publishing date
-                                        </th>
-                                        <th className="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
-                                            Edit or manage
-                                        </th>
-                                        <th className="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
-                                            Actions
-                                        </th>
+                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">اسم المنتج</th>
+                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الصنف</th>
+                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">السعر</th>
+                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الإجراءات</th>
                                     </tr>
                                 </thead>
-
-                                <tbody>
-                                    {
-                                        products && products.map((product, index) => (
-                                            <tr key={index}>
-                                                <th className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-left text-blueGray-700 ">
-                                                    {index + 1}
-                                                </th>
-                                                <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 ">
-                                                    {product?.name}
-                                                </td>
-                                                <td className="border-t-0 px-6 align-center border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                                                    {formatDate(product?.createdAt)}
-                                                </td>
-                                                <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 cursor-pointer hover:text-primary">
-                                                    <Link to={`/dashboard/update-product/${product._id}`}> Edit</Link>
-                                                </td>
-                                                <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                                                    <button
-                                                        onClick={() => handleDeleteProduct(product._id)}
-                                                        className='bg-red-600 text-white px-2 py-1'>Delete</button>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    }
-
-
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {products.map((product, index) => (
+                                        <tr key={product._id}>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                                {startProduct + index}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-center">
+                                                {product.name}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                                {product.category}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                                {product.regularPrice || (product.price ? `${product.price['500 جرام']} - ${product.price['1 كيلو']}` : 'N/A')}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
+                                                <Link
+                                                    to={`/dashboard/update-product/${product._id}`}
+                                                    className="text-blue-600 hover:text-blue-900 mx-2"
+                                                >
+                                                    تعديل
+                                                </Link>
+                                                <button
+                                                    onClick={() => handleDeleteProduct(product._id)}
+                                                    disabled={isDeleting}
+                                                    className="text-red-600 hover:text-red-900 mx-2"
+                                                >
+                                                    {isDeleting ? 'جاري الحذف...' : 'حذف'}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
                                 </tbody>
-
                             </table>
                         </div>
-                    </div>
-                </div>
 
-                {/* pagination */}
-                <div className='mt-6 flex items-center justify-center'>
-                    <button disabled={currentPage === 1} onClick={() => handlePageChange(currentPage - 1)} className='px-4 py-2 bg-gray-300 text-gray-700 rounded-md mr-2'>Previous</button>
-                    {
-                        [...Array(totalPages)].map((_, index) => (
-                            <button key={index}
-                            onClick={() => handlePageChange(index + 1)}
-                            className={`px-4 py-2 ${currentPage === index + 1 ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-700'} rounded-md mx-1`}>{index + 1}</button>
-                        ))
-                    }
-                    <button disabled={currentPage === totalPages} onClick={() => handlePageChange(currentPage + 1)} className='px-4 py-2 bg-gray-300 text-gray-700 rounded-md ml-2'>Next</button>
-                </div>
-
-                <footer className="relative pt-8 pb-6 mt-16">
-                    <div className="container mx-auto px-4">
-                        <div className="flex flex-wrap items-center md:justify-between justify-center">
-                            <div className="w-full md:w-6/12 px-4 mx-auto text-center">
-                                <div className="text-sm text-blueGray-500 font-semibold py-1">
-                                    Made with <a href="https://www.creative-tim.com/product/notus-js" className="text-blueGray-500 hover:text-gray-800" target="_blank">Notus JS</a> by <a href="https://www.creative-tim.com" className="text-blueGray-500 hover:text-blueGray-800" target="_blank"> Creative Tim</a>.
-                                </div>
+                        {totalPages > 1 && (
+                            <div className="mt-6 flex justify-center">
+                                <nav className="inline-flex rounded-md shadow">
+                                    <button
+                                        onClick={() => handlePageChange(currentPage - 1)}
+                                        disabled={currentPage === 1}
+                                        className="px-3 py-1 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                                    >
+                                        السابق
+                                    </button>
+                                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                                        <button
+                                            key={page}
+                                            onClick={() => handlePageChange(page)}
+                                            className={`px-3 py-1 border-t border-b border-gray-300 text-sm font-medium ${currentPage === page ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                                        >
+                                            {page}
+                                        </button>
+                                    ))}
+                                    <button
+                                        onClick={() => handlePageChange(currentPage + 1)}
+                                        disabled={currentPage === totalPages}
+                                        className="px-3 py-1 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                                    >
+                                        التالي
+                                    </button>
+                                </nav>
                             </div>
-                        </div>
-                    </div>
-                </footer>
-            </section>
-        </>
-    )
-}
+                        )}
+                    </>
+                )}
+            </div>
+        </div>
+    );
+};
 
-export default ManageProduct
+export default ManageProduct;

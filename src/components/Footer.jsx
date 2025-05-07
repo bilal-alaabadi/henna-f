@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaInstagram, FaTwitter, FaFacebookF, FaWhatsapp } from 'react-icons/fa';
+import { FaInstagram,  FaWhatsapp } from 'react-icons/fa';
 
 const Footer = () => {
   return (
@@ -12,7 +12,7 @@ const Footer = () => {
             <h4 className="text-lg font-bold text-gray-800 mb-4">عن المتجر</h4>
             <ul className="space-y-2">
               <li>
-                <a href={"/shop"} className="text-gray-600 hover:text-[#d3ae27]  transition-colors duration-300">المنتجات</a>
+                <a href={"/shop"} className="text-gray-600 hover:text-[#9B2D1F]  transition-colors duration-300">المنتجات</a>
               </li>
             </ul>
           </div>
@@ -34,10 +34,10 @@ const Footer = () => {
           <div>
             <h4 className="text-lg font-bold text-gray-800 mb-4">وسائل التواصل</h4>
             <div className="flex justify-center md:justify-end gap-4">
-              <a href="https://www.instagram.com/henna.burgund/reels/" className="text-gray-600 hover:hover:text-[#d3ae27]  transition">
+              <a href="https://www.instagram.com/henna.burgund/reels/" className="text-gray-600 hover:hover:text-[#9B2D1F]  transition">
                 <FaInstagram className="text-xl" />
               </a>
-              <a href="https://api.whatsapp.com/send/?phone=96876704406&text&type=phone_number&app_absent=0" className="text-gray-600 hover:text-[#d3ae27]  transition">
+              <a href="https://api.whatsapp.com/send/?phone=96876704406&text&type=phone_number&app_absent=0" className="text-gray-600 hover:text-[#9B2D1F]  transition">
                 <FaWhatsapp className="text-xl" />
               </a>
             </div>
@@ -50,9 +50,9 @@ const Footer = () => {
     تم التطوير بواسطة  
     <a
       href="https://www.instagram.com/roya_sow/"
-      className="hover:text-[#d3ae27]  font-semibold hover:underline mx-1"
+      className="hover:text-[#9B2D1F] font-semibold hover:underline mx-1"
     >
-      شركة رؤية
+      شركة رؤية 
     </a>
     بجودة واحترافية
   </p>

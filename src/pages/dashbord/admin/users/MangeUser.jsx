@@ -1,148 +1,90 @@
-import React, { useState } from 'react'
-import { useDeleteUserMutation, useGetUserQuery } from '../../../../redux/features/auth/authApi'
+import React, { useState } from 'react';
+import { useDeleteUserMutation, useGetUserQuery } from '../../../../redux/features/auth/authApi';
 import { Link } from 'react-router-dom';
 import UpdateUserModal from './UpdateUserModal';
+
 const ManageUser = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedUser, setSelectedUser] = useState(null)
+    const [selectedUser, setSelectedUser] = useState(null);
     const { data: users = [], error, isLoading, refetch } = useGetUserQuery();
 
-    console.log(users)
-
-    const [deleteUser] = useDeleteUserMutation()
+    const [deleteUser] = useDeleteUserMutation();
 
     const handleDelete = async (id) => {
+        const confirmDelete = window.confirm("هل أنت متأكد أنك تريد حذف هذا المستخدم؟");
+        if (!confirmDelete) return;
+        
         try {
-            const response = await deleteUser(id).unwrap();
-            alert("User deleted successfully!")
+            await deleteUser(id).unwrap();
+            alert("تم حذف المستخدم بنجاح!");
             refetch();
-
         } catch (error) {
-            console.error("Failed to delete user", error);
+            console.error("فشل في حذف المستخدم", error);
         }
-    }
+    };
 
     const handleEdit = (user) => {
-        setSelectedUser(user)
-        setIsModalOpen(true)
-    }
+        setSelectedUser(user);
+        setIsModalOpen(true);
+    };
 
     const handleCloseModal = () => {
-        setIsModalOpen(false)
-        setSelectedUser(null)
-    }
+        setIsModalOpen(false);
+        setSelectedUser(null);
+    };
+
     return (
         <>
-            {
-                isLoading && <div>Loading...</div>
-
-            }
-            {
-                error && <div>Error loading users data.</div>
-            }
-            <section className="py-1 bg-blueGray-50">
-                <div className="w-full  mb-12 xl:mb-0 px-4 mx-auto">
-                    <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-6 shadow-lg rounded ">
-                        <div className="rounded-t mb-0 px-4 py-3 border-0">
-                            <div className="flex flex-wrap items-center">
-                                <div className="relative w-full px-4 max-w-full flex-grow flex-1">
-                                    <h3 className="font-semibold text-base text-blueGray-700">All Users</h3>
-                                </div>
-                                <div className="relative w-full px-4 max-w-full flex-grow flex-1 text-right">
-                                    <button className="bg-indigo-500 text-white active:bg-indigo-600 text-xs font-bold uppercase px-3 py-1 rounded outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150" type="button">See all</button>
-                                </div>
-                            </div>
-
+            {isLoading && <div>جاري التحميل...</div>}
+            {error && <div>حدث خطأ أثناء تحميل بيانات المستخدمين.</div>}
+            
+            <section className="py-4 bg-gray-100 text-right w-full">
+                <div className="container mx-auto px-2 sm:px-4">
+                    <div className="bg-white shadow-lg rounded-lg ">
+                        <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
+                            <h3 className="text-lg font-semibold mb-2 sm:mb-0">جميع المستخدمين</h3>
+                            <button className="bg-blue-500 text-white px-3 py-1 rounded text-sm">عرض الكل</button>
                         </div>
-
-                        <div className="block w-full overflow-x-auto">
-                            <table className="items-center bg-transparent w-full border-collapse ">
+                        
+                        <div className="overflow-x-auto">
+                            <table className="w-full border-collapse bg-white shadow-md rounded-lg text-xs sm:text-sm">
                                 <thead>
-                                    <tr>
-                                        <th className="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
-                                            No.
-                                        </th>
-                                        <th className="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
-                                            User email
-                                        </th>
-                                        <th className="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
-                                            User role
-                                        </th>
-                                        <th className="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
-                                            Edit or manage
-                                        </th>
-                                        <th className="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
-                                            Actions
-                                        </th>
+                                    <tr className="bg-gray-200">
+                                        <th className="p-2">رقم</th>
+                                        <th className="p-2">البريد الإلكتروني</th>
+                                        <th className="p-2">الدور</th>
+                                        <th className="p-2">تعديل</th>
+                                        <th className="p-2">إجراء</th>
                                     </tr>
                                 </thead>
-
                                 <tbody>
-                                    {
-                                        users && users.map((user, index) => (
-                                            <tr key={index}>
-                                                <th className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-left text-blueGray-700 ">
-                                                    {index + 1}
-                                                </th>
-                                                <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 ">
-                                                    {user?.email || 'N/A'}
-                                                </td>
-                                                <td className="border-t-0 px-6 align-center border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                                                    <span
-                                                        className={`rounded-full py-[2px] px-3 ${user?.role === "admin"
-                                                                ? "bg-indigo-500 text-white "
-                                                                : "bg-amber-300"
-                                                            }`}
-                                                    >
-                                                        {" "}
-                                                        {user?.role}
-                                                    </span>
-                                                </td>
-                                                <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 cursor-pointer hover:text-primary">
-                                                    <button
-                                                        onClick={() => handleEdit(user)}
-                                                        className='flex gap-1 items-center hover:text-red-500'>
-                                                        <i className='ri-edit-2-line'></i>
-                                                        Edit
-                                                    </button>
-                                                </td>
-                                                <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                                                    <button
-                                                        onClick={() => handleDelete(user?._id)}
-                                                        className='bg-red-600 text-white px-2 py-1'>Delete</button>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    }
-
-
+                                    {users && users.map((user, index) => (
+                                        <tr key={index} className="border-b text-center">
+                                            <td className="p-2">{index + 1}</td>
+                                            <td className="p-2">{user?.email || 'غير متوفر'}</td>
+                                            <td className="p-2">
+                                                <span className={`rounded-full py-1 px-3 ${user?.role === "admin" ? "bg-indigo-500 text-white" : "bg-amber-300"}`}>
+                                                    {user?.role === "admin" ? "مسؤول" : "مستخدم"}
+                                                </span>
+                                            </td>
+                                            <td className="p-2 font-bold text-lg text-blue-500 cursor-pointer">
+                                                <button onClick={() => handleEdit(user)} className='hover:text-red-500'>تعديل</button>
+                                            </td>
+                                            <td className="p-2">
+                                                <button onClick={() => handleDelete(user?._id)} className='bg-red-500 text-white px-2 py-1 rounded text-xs sm:text-sm'>حذف</button>
+                                            </td>
+                                        </tr>
+                                    ))}
                                 </tbody>
-
                             </table>
                         </div>
                     </div>
                 </div>
-
-
-
-                <footer className="relative pt-8 pb-6 mt-16">
-                    <div className="container mx-auto px-4">
-                        <div className="flex flex-wrap items-center md:justify-between justify-center">
-                            <div className="w-full md:w-6/12 px-4 mx-auto text-center">
-                                <div className="text-sm text-blueGray-500 font-semibold py-1">
-                                    Made with <a href="https://www.creative-tim.com/product/notus-js" className="text-blueGray-500 hover:text-gray-800" target="_blank">Notus JS</a> by <a href="https://www.creative-tim.com" className="text-blueGray-500 hover:text-blueGray-800" target="_blank"> Creative Tim</a>.
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </footer>
             </section>
 
-            {
-                isModalOpen && <UpdateUserModal user={selectedUser} onClose={handleCloseModal} onRoleUpdate={refetch} />
-            }
+            {isModalOpen && <UpdateUserModal user={selectedUser} onClose={handleCloseModal} onRoleUpdate={refetch} />}
         </>
-    )
-}
+    );
+};
 
-export default ManageUser
+export default ManageUser;

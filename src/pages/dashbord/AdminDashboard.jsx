@@ -5,11 +5,11 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { logout } from '../../redux/features/auth/authSlice';
 
 const navItems = [
-    { path: '/dashboard/admin', label: 'Dashboard' },
-    { path: '/dashboard/add-product', label: 'Add Product'  },
-    { path: '/dashboard/manage-products', label: 'Manage Products' },
-    { path: '/dashboard/users', label: 'Users'  },
-    { path: '/dashboard/manage-orders', label: 'Manage Orders'  },
+    { path: '/dashboard/admin', label: 'لوحة القيادة' },
+    { path: '/dashboard/add-product', label: 'أضافة منتج'  },
+    { path: '/dashboard/manage-products', label: 'أدارة المنتجات' },
+    { path: '/dashboard/users', label: 'المستخدمين'  },
+    { path: '/dashboard/manage-orders', label: 'أدارة الطلبات'  },
 ]
 const AdminDashboard = () => {
     const [logoutUser] = useLogoutUserMutation();
@@ -31,7 +31,7 @@ const AdminDashboard = () => {
             <div>
                 <div className='nav__logo'>
                     <Link to="/"><span>.</span>متجر</Link>
-                    <p className='text-xs italic'>admin dashboard</p>
+                    <p className='text-xs italic'>لوحة تحكم المشرف</p>
                 </div>
                 <hr className='mt-5' />
                 <ul className='space-y-5 pt-5'>
@@ -56,7 +56,7 @@ const AdminDashboard = () => {
                 <hr  className='mb-3'/>
                 <button 
                 onClick={handleLogout}
-                className='text-white bg-primary font-medium px-5 py-1 rounded-sm'>Logout</button>
+                className='text-white bg-[#3D4B2E] font-medium px-5 py-1 rounded-sm'>تسجيل الخروج</button>
             </div>
         </div>
   )

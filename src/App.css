@@ -4,7 +4,7 @@
   --primary-color: #ed3849;
   --primary-color-dark: #d23141;
   --primary-color-light:  #eff6ff;
-  --text-dark: #0f172a;
+  --text-dark: #4E5A3F;
   --text-light: #64748b;
   --extra-light: #f8fafc;
   --white: #ffffff;
@@ -13,7 +13,9 @@
   --max-width-900: 900px;
   --header-font: "Playfair Display", serif;
 }
-
+/* #3D4B2E */
+/* #4E5A3F */
+/* #9B2D1F */
 * {
   padding: 0;
   margin: 0;
@@ -24,6 +26,7 @@
   max-width: var(--max-width-1400);
   margin: auto;
   padding: 5rem 1rem;
+
 }
 
 .section__header {

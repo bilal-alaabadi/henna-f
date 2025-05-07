@@ -23,7 +23,11 @@ const AddProduct = () => {
     const [product, setProduct] = useState({
         name: '',
         category: '',
-        price: '',
+        regularPrice: '',
+        price: {
+            "500 جرام": '',
+            "1 كيلو": ''
+        },
         description: ''
     });
     const [image, setImage] = useState([]);
@@ -39,20 +43,66 @@ const AddProduct = () => {
         });
     };
 
+    const handlePriceChange = (size, value) => {
+        setProduct({
+            ...product,
+            price: {
+                ...product.price,
+                [size]: value
+            }
+        });
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!product.name || !product.category || !product.price || !product.description || image.length === 0) {
+        
+        // التحقق من الحقول المطلوبة
+        if (!product.name || !product.category || !product.description || image.length === 0) {
             alert('الرجاء تعبئة جميع الحقول المطلوبة');
             return;
         }
 
+        // التحقق من الأسعار بناءً على الفئة
+        if (product.category === 'حناء بودر') {
+            if (!product.price['500 جرام'] || !product.price['1 كيلو']) {
+                alert('الرجاء إدخال سعرين للحناء بودر (500 جرام و1 كيلو)');
+                return;
+            }
+        } else {
+            if (!product.regularPrice) {
+                alert('الرجاء إدخال سعر المنتج');
+                return;
+            }
+        }
+
         try {
-            await AddProduct({ ...product, image, author: user?._id }).unwrap();
+            const productData = {
+                name: product.name,
+                category: product.category,
+                description: product.description,
+                image,
+                author: user?._id
+            };
+
+            if (product.category === 'حناء بودر') {
+                productData.price = {
+                    "500 جرام": parseFloat(product.price['500 جرام']),
+                    "1 كيلو": parseFloat(product.price['1 كيلو'])
+                };
+            } else {
+                productData.regularPrice = parseFloat(product.regularPrice);
+            }
+
+            await AddProduct(productData).unwrap();
             alert('تم إضافة المنتج بنجاح');
             setProduct({
                 name: '',
                 category: '',
-                price: '',
+                regularPrice: '',
+                price: {
+                    "500 جرام": '',
+                    "1 كيلو": ''
+                },
                 description: ''
             });
             setImage([]);
@@ -80,14 +130,41 @@ const AddProduct = () => {
                     onChange={handleChange}
                     options={categories}
                 />
-                <TextInput
-                    label="السعر"
-                    name="price"
-                    type="number"
-                    placeholder="50"
-                    value={product.price}
-                    onChange={handleChange}
-                />
+                
+                {product.category === 'حناء بودر' ? (
+                    <>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">سعر 500 جرام</label>
+                            <input
+                                type="number"
+                                value={product.price['500 جرام']}
+                                onChange={(e) => handlePriceChange('500 جرام', e.target.value)}
+                                className="add-product-InputCSS"
+                                placeholder="السعر لـ 500 جرام"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">سعر 1 كيلو</label>
+                            <input
+                                type="number"
+                                value={product.price['1 كيلو']}
+                                onChange={(e) => handlePriceChange('1 كيلو', e.target.value)}
+                                className="add-product-InputCSS"
+                                placeholder="السعر لـ 1 كيلو"
+                            />
+                        </div>
+                    </>
+                ) : (
+                    <TextInput
+                        label="السعر"
+                        name="regularPrice"
+                        type="number"
+                        placeholder="50"
+                        value={product.regularPrice}
+                        onChange={handleChange}
+                    />
+                )}
+
                 <UploadImage
                     name="image"
                     id="image"

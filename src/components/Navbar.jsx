@@ -5,7 +5,7 @@ import CartModal from '../pages/shop/CartModal';
 import avatarImg from "../assets/avatar.png";
 import { useLogoutUserMutation } from '../redux/features/auth/authApi';
 import { logout } from '../redux/features/auth/authSlice';
-import log from "../assets/Black_White_Modern_Monogram_Initial_Name_Logo-removebg-preview.png"
+import log from "../assets/_º_ä_____º__-removebg-preview.png"
 const Navbar = () => {
     const products = useSelector((state) => state.cart.products);
     const [isCartOpen, setIsCartOpen] = useState(false);
@@ -54,12 +54,12 @@ const Navbar = () => {
     };
 
     return (
-        <header className='fixed-nav-bar w-full bg-white '>
+        <header className='fixed-nav-bar w-full bg-white pt-10 pb-11'>
             <nav className='max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center relative'>
                 {/* Mobile Menu Button (Hamburger Icon) */}
                 <button
                     onClick={handleMobileMenuToggle}
-                    className='sm:hidden text-gray-700 hover:text-primary focus:outline-none'
+                    className='sm:hidden text-gray-700 hover:text-[#4E5A3F] focus:outline-none'
                 >
                     <i className="ri-menu-line text-2xl"></i>
                 </button>
@@ -67,44 +67,39 @@ const Navbar = () => {
                 {/* Nav Links (Desktop) */}
                 <ul className='hidden sm:flex gap-6 md:gap-8' dir='rtl'>
                     <li>
-                        <Link to="" className='text-sm sm:text-base md:text-lg hover:text-primary transition-colors duration-300'>
+                        <Link to="" className='text-sm sm:text-base md:text-lg hover:text-[#4E5A3F] transition-colors duration-300'>
                             الرئيسية
                         </Link>
                     </li>
                     <li>
-                        <Link to={"/Shop"} className='text-sm sm:text-base md:text-lg hover:text-primary transition-colors duration-300'>
+                        <Link to={"/Shop"} className='text-sm sm:text-base md:text-lg hover:text-[#4E5A3F] transition-colors duration-300'>
                             المتجر
                         </Link>
                     </li>
-                    <li>
-                        <Link to="" className='text-sm sm:text-base md:text-lg hover:text-primary transition-colors duration-300'>
-                            الصفحات
-                        </Link>
-                    </li>
+
 
                 </ul>
 
                 {/* Logo (Centered) */}
-                <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center h-20"> {/* زيادة الارتفاع */}
+                <div className="absolute left-1/2 pt-5 -translate-x-1/2 flex items-center justify-center h-20"> {/* زيادة الارتفاع */}
                  {/* إضافة فئات الخط هنا */}
                 <Link to="/" className="inline-block">
-                {/* <img 
+                <img 
                     src={log} 
                     alt="شعار رؤية" 
-                    className="w-48 h-56 pt-6"  
+                    className="w-32 h-32 "  
                     loading="lazy" 
-                /> */}
-                <div>henna</div>
+                />
                 </Link>
             </div>
 
                 {/* Nav Icons */}
                 <div className='flex items-center gap-4 sm:gap-6'>
 
-                    <button onClick={handleCartToggle} className='relative hover:text-primary'>
+                    <button onClick={handleCartToggle} className='relative hover:text-[#4E5A3F]'>
                         <i className="ri-shopping-bag-line text-lg"></i>
                         {products.length > 0 && (
-                            <sup className='absolute -top-2 -right-2 text-xs bg-primary text-white rounded-full px-1.5'>
+                            <sup className='absolute -top-2 -right-2 text-xs bg-[#4E5A3F] text-white rounded-full px-1.5'>
                                 {products.length}
                             </sup>
                         )}
@@ -144,7 +139,7 @@ const Navbar = () => {
                             )}
                         </div>
                     ) : (
-                        <Link to="/login" className='hover:text-primary'>
+                        <Link to="/login" className='hover:text-[#4E5A3F]'>
                             <i className="ri-user-line text-lg"></i>
                         </Link>
                     )}
@@ -155,20 +150,16 @@ const Navbar = () => {
                     <div className='sm:hidden absolute top-16 left-0 w-full bg-white shadow-md z-40'>
                         <ul className='flex flex-col gap-4 p-4'>
                             <li>
-                                <Link to="/" className='block text-sm hover:text-primary transition-colors duration-300'>
+                                <Link to="/" className='block text-sm hover:text-[#4E5A3F] transition-colors duration-300'>
                                     الرئيسية
                                 </Link>
                             </li>
                             <li>
-                                <Link to="/shop" className='block text-sm hover:text-primary transition-colors duration-300'>
+                                <Link to="/shop" className='block text-sm hover:text-[#4E5A3F] transition-colors duration-300'>
                                     المتجر
                                 </Link>
                             </li>
-                            <li>
-                                <Link to="/" className='block text-sm hover:text-primary transition-colors duration-300'>
-                                    الصفحات
-                                </Link>
-                            </li>
+
 
                         </ul>
                     </div>
