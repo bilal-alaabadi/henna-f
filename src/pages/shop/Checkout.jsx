@@ -75,6 +75,7 @@ const Checkout = () => {
             type="submit"
             className="bg-blue-500 text-white px-6 py-3 rounded-md hover:bg-blue-600 w-full"
             disabled={products.length === 0}
+            onClick={makePayment}
           >
             إتمام الطلب
           </button>
