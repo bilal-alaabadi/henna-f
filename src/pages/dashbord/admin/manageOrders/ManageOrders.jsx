@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDeleteOrderMutation, useGetAllOrdersQuery } from '../../../../redux/features/orders/orderApi';
+import { useFetchProductByIdQuery } from '../../../../redux/features/products/productsApi';
 import { formatDate } from '../../../../utils/formateDate';
 import UpdateOrderModal from './UpdateOrderModal';
-import html2pdf from 'html2pdf.js'; // مكتبة لتحويل HTML إلى PDF
+import html2pdf from 'html2pdf.js';
 
 const ManageOrders = () => {
     const { data: orders, error, isLoading, refetch } = useGetAllOrdersQuery();
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [viewOrder, setViewOrder] = useState(null); // حالة لعرض تفاصيل الطلب
+    const [viewOrder, setViewOrder] = useState(null);
+    const [orderProducts, setOrderProducts] = useState([]);
     const [deleteOrder] = useDeleteOrderMutation();
 
     const handleEditOrder = (order) => {
@@ -31,28 +33,73 @@ const ManageOrders = () => {
         }
     };
 
-    const handleViewOrder = (order) => {
-        setViewOrder(order); // تعيين الطلب المحدد لعرض تفاصيله
+    const handleViewOrder = async (order) => {
+        setViewOrder(order);
+        
+        // جلب تفاصيل المنتجات
+        if (order.products && order.products.length > 0) {
+            const productsDetails = await Promise.all(
+                order.products.map(async (item) => {
+                    try {
+                        const response = await fetch(`${getBaseUrl()}/api/products/${item.productId}`);
+                        const productData = await response.json();
+                        return {
+                            ...productData.product,
+                            quantity: item.quantity,
+                            selectedSize: item.selectedSize
+                        };
+                    } catch (error) {
+                        console.error("Error fetching product details:", error);
+                        return {
+                            _id: item.productId,
+                            name: "Product not available",
+                            quantity: item.quantity,
+                            selectedSize: item.selectedSize
+                        };
+                    }
+                })
+            );
+            setOrderProducts(productsDetails);
+        }
     };
 
     const handleCloseViewModal = () => {
-        setViewOrder(null); // إغلاق عرض التفاصيل
+        setViewOrder(null);
+        setOrderProducts([]);
     };
 
     const handlePrintOrder = () => {
-        window.print(); // طباعة الصفحة
+        window.print();
     };
 
     const handleDownloadPDF = () => {
-        const element = document.getElementById('order-details'); // العنصر الذي يحتوي على تفاصيل الطلب
+        const element = document.getElementById('order-details');
         const options = {
             margin: [10, 10],
-            filename: `order_${viewOrder.orderId}.pdf`,
+            filename: `order_${viewOrder?.orderId || 'unknown'}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2 },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         };
-        html2pdf().from(element).set(options).save(); // تحويل HTML إلى PDF وحفظه
+        html2pdf().from(element).set(options).save();
+    };
+
+    const calculateProductPrice = (product) => {
+        if (!product) return '0.00';
+        
+        // لحناء بودر مع حجم محدد
+        if (product.category === 'حناء بودر' && product.selectedSize && product.price) {
+            const size = product.selectedSize;
+            const price = product.price[size] || product.regularPrice || 0;
+            return (price * (product.quantity || 1)).toFixed(2);
+        }
+        
+        // للمنتجات العادية
+        if (product.regularPrice) {
+            return (product.regularPrice * (product.quantity || 1)).toFixed(2);
+        }
+        
+        return '0.00';
     };
 
     if (isLoading) return <div>Loading....</div>;
@@ -64,10 +111,9 @@ const ManageOrders = () => {
             <table className='min-w-full bg-white border border-gray-200 rounded-lg'>
                 <thead className='bg-gray-100'>
                     <tr>
-                        <th className='py-3 px-4 border-b'>Order Id</th>
-                        <th className='py-3 px-4 border-b'>Customer</th>
-                        <th className='py-3 px-4 border-b'>Status</th>
+                        <th className='py-3 px-4 border-b'>Email</th>
                         <th className='py-3 px-4 border-b'>Date</th>
+                        <th className='py-3 px-4 border-b'>Status</th>
                         <th className='py-3 px-4 border-b'>Actions</th>
                     </tr>
                 </thead>
@@ -76,22 +122,17 @@ const ManageOrders = () => {
                     {orders &&
                         orders.map((order, index) => (
                             <tr key={index}>
-                                <td className='py-3 px-4 border-b'>{order?.orderId}</td>
                                 <td className='py-3 px-4 border-b'>{order?.email}</td>
-                                <td className='py-3 px-4 border-b'>
-                                    <span
-                                        className={`inline-block px-3 py-1 text-xs text-white rounded-full ${getStatusColor(
-                                            order?.status
-                                        )}`}
-                                    >
+                                <td className='py-4 px-4 border-b'>{formatDate(order?.updatedAt)}</td>
+                                <td className='py-4 px-4 border-b'>
+                                    <span className={`px-2 py-1 rounded-full text-white ${getStatusColor(order?.status)}`}>
                                         {order?.status}
                                     </span>
                                 </td>
-                                <td className='py-3 px-4 border-b'>{formatDate(order?.updatedAt)}</td>
                                 <td className='py-3 px-4 border-b flex items-center space-x-4'>
                                     <button
                                         className="text-blue-500 hover:underline"
-                                        onClick={() => handleViewOrder(order)} // عرض تفاصيل الطلب
+                                        onClick={() => handleViewOrder(order)}
                                     >
                                         View
                                     </button>
@@ -124,8 +165,8 @@ const ManageOrders = () => {
 
             {/* View Order Details Modal */}
             {viewOrder && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                    <div className="bg-white p-6 rounded-lg w-full max-w-2xl print-modal" id="order-details">
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 overflow-y-auto">
+                    <div className="bg-white p-6 rounded-lg w-full max-w-4xl print-modal" id="order-details">
                         <style>
                             {`
                                 @media print {
@@ -160,16 +201,79 @@ const ManageOrders = () => {
                             `}
                         </style>
                         <h2 className="text-xl font-semibold mb-4">Order Details</h2>
-                        <div className="space-y-4">
-                            {viewOrder.orderId && <p><strong>Order ID:</strong> {viewOrder.orderId}</p>}
-                            {viewOrder.email && <p><strong>Customer Email:</strong> {viewOrder.email}</p>}
-                            {viewOrder.phoneNumber && <p><strong>Phone:</strong> {viewOrder.phoneNumber}</p>}
-                            {viewOrder.shippingAddress?.province && <p><strong>Province:</strong> {viewOrder.shippingAddress.province}</p>}
-                            {viewOrder.shippingAddress?.wilayat && <p><strong>Wilayat:</strong> {viewOrder.shippingAddress.wilayat}</p>}
-                            {viewOrder.shippingAddress?.streetAddress && <p><strong>Street Address:</strong> {viewOrder.shippingAddress.streetAddress}</p>}
-                            {viewOrder.orderNotes && <p><strong>Order Notes:</strong> {viewOrder.orderNotes}</p>}
+                        
+                        {/* تفاصيل المنتجات */}
+                        <div className="mt-8 pt-6" dir='rtl'>
+                            <h3 className="text-xl font-bold mb-4">تفاصيل المنتجات</h3>
+                            <div className="space-y-6">
+                                {orderProducts.map((product, index) => (
+                                    <div key={index} className="flex flex-col md:flex-row gap-4 p-4 border rounded-lg">
+                                        
+                                        <div className="md:w-3/4">
+                                            <h4 className="text-lg font-semibold">{product?.name || 'اسم المنتج غير متوفر'}</h4>
+                                            {product?.description && (
+                                                <p className="text-gray-600 mt-2">{product.description}</p>
+                                            )}
+                                            <div className="mt-2">
+                                                <span className="font-medium">الكمية: </span>
+                                                <span>{product?.quantity || 1}</span>
+                                            </div>
+                                            {product?.category === 'حناء بودر' && product?.selectedSize && (
+                                                <div className="mt-2">
+                                                    <span className="font-medium">الحجم: </span>
+                                                    <span>{product.selectedSize}</span>
+                                                </div>
+                                            )}
+                                            <div className="mt-2">
+                                                <span className="font-medium">السعر : </span>
+                                                <span>{calculateProductPrice(product)} ر.ع</span>
+                                            </div>
+                                            <div className="mt-2">
+                                                <span className="font-medium">الفئة: </span>
+                                                <span>{product?.category || 'غير محدد'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                        <div className="mt-4 flex space-x-4">
+
+                        {/* ملخص الطلب */}
+                        <div className="mt-8 border-t pt-6" dir='rtl'>
+                            <h3 className="text-xl font-bold mb-4">ملخص الطلب</h3>
+                            <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+                                <div className="flex justify-between items-center py-2">
+                                    <span className="font-medium">الإجمالي النهائي:</span>
+                                    <span className="font-bold text-lg">{viewOrder.amount?.toFixed(2) || '0.00'} ر.ع</span>
+                                </div>
+                                
+                                
+                                
+                                <div className="flex justify-between py-2">
+                                    <span>اسم العميل:</span>
+                                    <span className="font-semibold">{viewOrder.customerName || 'غير معروف'}</span>
+                                </div>
+                                
+                                <div className="flex justify-between py-2">
+                                    <span>رقم الهاتف:</span>
+                                    <span className="font-semibold">{viewOrder.customerPhone || 'غير معروف'}</span>
+                                </div>
+                                
+                                <div className="flex justify-between py-2">
+                                    <span>الولاية:</span>
+                                    <span className="font-semibold">{viewOrder.wilayat || 'غير معروف'}</span>
+                                </div>
+                                
+                                <div className="flex justify-between py-2 border-t pt-3">
+                                    <span>تاريخ الطلب:</span>
+                                    <span className="font-semibold">
+                                        {viewOrder.createdAt ? new Date(viewOrder.createdAt).toLocaleDateString('ar-OM') : 'غير معروف'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-6 flex space-x-4">
                             <button
                                 className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
                                 onClick={handleCloseViewModal}
@@ -209,6 +313,13 @@ const getStatusColor = (status) => {
         default:
             return 'bg-gray-300';
     }
+};
+
+// دالة مساعدة للحصول على عنوان URL الأساسي
+const getBaseUrl = () => {
+    return process.env.NODE_ENV === 'production' 
+        ? 'https://your-production-url.com' 
+        : 'http://localhost:5000';
 };
 
 export default ManageOrders;

@@ -10,7 +10,7 @@ const SingleProduct = () => {
     const { id } = useParams();
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    const { data, error, isLoading } = useFetchProductByIdQuery(id);
+    const { data, error, isLoading } = useFetchProductByIdQuery(id); 
 
     const { user } = useSelector((state) => state.auth);
 

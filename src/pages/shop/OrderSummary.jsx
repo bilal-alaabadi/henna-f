@@ -5,18 +5,25 @@ import { Link } from 'react-router-dom';
 
 const OrderSummary = ({ onClose }) => {
     const dispatch = useDispatch();
-    const { selectedItems, totalPrice } = useSelector((store) => store.cart);
+    const { selectedItems, totalPrice, shippingFee } = useSelector((store) => store.cart);
+    const grandTotal = totalPrice + shippingFee; // حساب الإجمالي النهائي هنا
 
     const handleClearCart = () => {
         dispatch(clearCart());
     };
 
     return (
-        <div className='bg-[#6f9248] mt-5 rounded text-base'>
+        <div className='bg-[#799b52] mt-5 rounded text-base' >
             <div className='px-6 py-4 space-y-5'>
                 <h2 className='text-xl text-white'>ملخص الطلب</h2>
                 <p className='text-white mt-2'>العناصر المحددة: {selectedItems}</p>
-                <p className='font-bold text-white'>السعر الإجمالي:  ر.ع{totalPrice.toFixed(2)}</p>
+                
+                <div className='text-white'>
+                    <p>السعر الفرعي: ر.ع{totalPrice.toFixed(2)}</p>
+                    <p>رسوم الشحن: ر.ع{shippingFee.toFixed(2)}</p>
+                    <p className='font-bold mt-2'>الإجمالي النهائي: ر.ع{grandTotal.toFixed(2)}</p>
+                </div>
+                
                 <div className='px-4 mb-6'>
                     <button
                         onClick={(e) => {
@@ -30,7 +37,7 @@ const OrderSummary = ({ onClose }) => {
                     </button>
                     <Link to="/checkout">
                         <button
-                            onClick={onClose} // إغلاق السلة عند الضغط على الزر
+                            onClick={onClose}
                             className='bg-green-600 px-3 py-1.5 text-white mt-2 rounded-md flex justify-between items-center'
                         >
                             <span className='mr-2'>إتمام الشراء</span>
@@ -39,7 +46,7 @@ const OrderSummary = ({ onClose }) => {
                     </Link>
                 </div>
             </div>
-        </div>
+        </div> 
     );
 };
 
