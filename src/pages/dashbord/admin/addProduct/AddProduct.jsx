@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import TextInput from './TextInput';
 import SelectInput from './SelectInput';
@@ -17,23 +17,38 @@ const categories = [
     { label: 'إكليل الجبل', value: 'إكليل الجبل' }
 ];
 
+const sizes = [
+    { label: 'اختر الحجم', value: '' },
+    { label: '1 كيلو', value: '1 كيلو' },
+    { label: '500 جرام', value: '500 جرام' }
+];
+
 const AddProduct = () => {
     const { user } = useSelector((state) => state.auth);
 
     const [product, setProduct] = useState({
         name: '',
         category: '',
-        regularPrice: '',
-        price: {
-            "500 جرام": '',
-            "1 كيلو": ''
-        },
+        size: '',
+        price: '',
         description: ''
     });
+    
+    const [showSizeField, setShowSizeField] = useState(false);
     const [image, setImage] = useState([]);
 
     const [AddProduct, { isLoading, error }] = useAddProductMutation();
     const navigate = useNavigate();
+
+    useEffect(() => {
+        // إظهار حقل الحجم فقط عند اختيار حناء بودر
+        setShowSizeField(product.category === 'حناء بودر');
+        
+        // إعادة تعيين الحجم عند تغيير الفئة
+        if (!showSizeField) {
+            setProduct(prev => ({ ...prev, size: '' }));
+        }
+    }, [product.category]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -43,147 +58,124 @@ const AddProduct = () => {
         });
     };
 
-    const handlePriceChange = (size, value) => {
-        setProduct({
-            ...product,
-            price: {
-                ...product.price,
-                [size]: value
-            }
-        });
-    };
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         
         // التحقق من الحقول المطلوبة
-        if (!product.name || !product.category || !product.description || image.length === 0) {
-            alert('الرجاء تعبئة جميع الحقول المطلوبة');
+        const requiredFields = {
+            'أسم المنتج': product.name,
+            'صنف المنتج': product.category,
+            'السعر': product.price,
+            'الوصف': product.description,
+            'الصور': image.length > 0
+        };
+        
+        // إذا كانت الفئة هي الحناء، نتحقق من وجود الحجم
+        if (product.category === 'حناء بودر' && !product.size) {
+            alert('الرجاء اختيار الحجم للحناء');
             return;
         }
 
-        // التحقق من الأسعار بناءً على الفئة
-        if (product.category === 'حناء بودر') {
-            if (!product.price['500 جرام'] || !product.price['1 كيلو']) {
-                alert('الرجاء إدخال سعرين للحناء بودر (500 جرام و1 كيلو)');
-                return;
-            }
-        } else {
-            if (!product.regularPrice) {
-                alert('الرجاء إدخال سعر المنتج');
-                return;
-            }
+        // التحقق من جميع الحقول المطلوبة
+        const missingFields = Object.entries(requiredFields)
+            .filter(([_, value]) => !value)
+            .map(([field]) => field);
+
+        if (missingFields.length > 0) {
+            alert(`الرجاء ملء الحقول التالية: ${missingFields.join('، ')}`);
+            return;
         }
 
         try {
-            const productData = {
-                name: product.name,
-                category: product.category,
-                description: product.description,
-                image,
-                author: user?._id
-            };
-
-            if (product.category === 'حناء بودر') {
-                productData.price = {
-                    "500 جرام": parseFloat(product.price['500 جرام']),
-                    "1 كيلو": parseFloat(product.price['1 كيلو'])
-                };
-            } else {
-                productData.regularPrice = parseFloat(product.regularPrice);
-            }
-
-            await AddProduct(productData).unwrap();
-            alert('تم إضافة المنتج بنجاح');
+            await AddProduct({ 
+                ...product, 
+                image, 
+                author: user?._id 
+            }).unwrap();
+            
+            alert('تمت أضافة المنتج بنجاح');
             setProduct({
                 name: '',
                 category: '',
-                regularPrice: '',
-                price: {
-                    "500 جرام": '',
-                    "1 كيلو": ''
-                },
+                size: '',
+                price: '',
                 description: ''
             });
             setImage([]);
             navigate("/shop");
         } catch (error) {
-            console.log("فشل في إضافة المنتج", error);
+            console.log("Failed to submit product", error);
+            alert('حدث خطأ أثناء إضافة المنتج');
         }
     };
 
     return (
         <div className="container mx-auto mt-8">
-            <h2 className="text-2xl font-bold mb-6">إضافة منتج جديد</h2>
+            <h2 className="text-2xl font-bold mb-6">أضافة منتج جديد</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
                 <TextInput
-                    label="اسم المنتج"
+                    label="أسم المنتج"
                     name="name"
-                    placeholder="مثال: حناء بودر عالية الجودة"
+                    placeholder="أكتب أسم المنتج"
                     value={product.name}
                     onChange={handleChange}
                 />
+                
                 <SelectInput
-                    label="الصنف"
+                    label="صنف المنتج"
                     name="category"
                     value={product.category}
                     onChange={handleChange}
                     options={categories}
                 />
                 
-                {product.category === 'حناء بودر' ? (
-                    <>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">سعر 500 جرام</label>
-                            <input
-                                type="number"
-                                value={product.price['500 جرام']}
-                                onChange={(e) => handlePriceChange('500 جرام', e.target.value)}
-                                className="add-product-InputCSS"
-                                placeholder="السعر لـ 500 جرام"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">سعر 1 كيلو</label>
-                            <input
-                                type="number"
-                                value={product.price['1 كيلو']}
-                                onChange={(e) => handlePriceChange('1 كيلو', e.target.value)}
-                                className="add-product-InputCSS"
-                                placeholder="السعر لـ 1 كيلو"
-                            />
-                        </div>
-                    </>
-                ) : (
-                    <TextInput
-                        label="السعر"
-                        name="regularPrice"
-                        type="number"
-                        placeholder="50"
-                        value={product.regularPrice}
+                {showSizeField && (
+                    <SelectInput
+                        label="حجم الحناء"
+                        name="size"
+                        value={product.size}
                         onChange={handleChange}
+                        options={sizes}
                     />
                 )}
-
+                
+                <TextInput
+                    label="السعر"
+                    name="price"
+                    type="number"
+                    placeholder="50"
+                    value={product.price}
+                    onChange={handleChange}
+                />
+                
                 <UploadImage
                     name="image"
                     id="image"
                     setImage={setImage}
                 />
+                
                 <div>
-                    <label htmlFor="description" className='block text-sm font-medium text-gray-700'>الوصف</label>
+                    <label htmlFor="description" className='block text-sm font-medium text-gray-700'>
+                        وصف المنتج
+                    </label>
                     <textarea
                         name="description"
                         id="description"
                         className='add-product-InputCSS'
                         value={product.description}
-                        placeholder='اكتب وصفاً للمنتج'
+                        placeholder='اكتب وصف المنتج'
                         onChange={handleChange}
+                        rows={4}
                     ></textarea>
                 </div>
+                
                 <div>
-                    <button type='submit' className='add-product-btn' disabled={isLoading}>
-                        {isLoading ? "جاري الإضافة..." : "إضافة المنتج"}
+                    <button 
+                        type='submit' 
+                        className='add-product-btn' 
+                        disabled={isLoading}
+                    >
+                        {isLoading ? "جاري الإضافة..." : "أضف منتج"}
                     </button>
                 </div>
             </form>

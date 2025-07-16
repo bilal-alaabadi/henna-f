@@ -18,15 +18,14 @@ const SingleProduct = () => {
     const productReviews = data?.reviews || [];
 
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
-    const [selectedSize, setSelectedSize] = useState('500 جرام');
     const [imageScale, setImageScale] = useState(1);
 
     useEffect(() => {
-        // تأثير الحركة عند تغيير الحجم
+        // تأثير الحركة عند التحميل
         setImageScale(1.05);
         const timer = setTimeout(() => setImageScale(1), 300);
         return () => clearTimeout(timer);
-    }, [selectedSize]);
+    }, []);
 
     const handleAddToCart = (product) => {
         if (!user) {
@@ -36,8 +35,7 @@ const SingleProduct = () => {
 
         const productToAdd = {
             ...product,
-            selectedSize: product.category === 'حناء بودر' ? selectedSize : null,
-            price: product.category === 'حناء بودر' ? product.price[selectedSize] : product.regularPrice
+            price: product.regularPrice || product.price || 0
         };
 
         dispatch(addToCart(productToAdd));
@@ -115,20 +113,9 @@ const SingleProduct = () => {
                         <h3 className='text-2xl font-semibold mb-4'>{singleProduct.name}</h3>
                         
                         {/* عرض السعر */}
-                        {singleProduct.category === 'حناء بودر' ? (
-                            <div className='mb-4'>
-                                <p className='text-xl text-[#3D4B2E] space-x-1'>
-                                    السعر: {singleProduct.price?.[selectedSize]} ر.ع
-                                </p>
-                                <p className='text-sm text-gray-500 mt-1'>
-                                    (لـ {selectedSize})
-                                </p>
-                            </div>
-                        ) : (
-                            <p className='text-xl text-[#3D4B2E] mb-4 space-x-1'>
-                                {singleProduct.regularPrice} ر.ع
-                            </p>
-                        )}
+                        <p className='text-xl text-[#3D4B2E] mb-4 space-x-1'>
+                            {singleProduct.regularPrice || singleProduct.price || 0} ر.ع
+                        </p>
 
                         <p className="text-gray-500 mb-4 text-lg font-medium leading-relaxed">
                             <span className="text-gray-800 font-bold block">:الوصف</span> 
@@ -141,38 +128,6 @@ const SingleProduct = () => {
                                 <span className="text-gray-800 font-bold block">:الفئة</span> 
                                 <span className="text-gray-600">{singleProduct.category}</span>
                             </p>
-                            
-                            {singleProduct.category === 'حناء بودر' && (
-                                <div className="mb-4">
-                                    <p className="text-gray-800 font-bold mb-2">:اختر الحجم</p>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <button
-                                            onClick={() => {
-                                                setSelectedSize("500 جرام");
-                                            }}
-                                            className={`py-2 px-4 rounded-lg border-2 transition-all duration-200 ${
-                                                selectedSize === "500 جرام"
-                                                ? "bg-[#4E5A3F] text-white border-[#4E5A3F]"
-                                                : "bg-white text-gray-700 border-gray-300 hover:border-[#4E5A3F]"
-                                            }`}
-                                        >
-                                            500 جرام - {singleProduct.price?.['500 جرام']} ر.ع
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                setSelectedSize("1 كيلو");
-                                            }}
-                                            className={`py-2 px-4 rounded-lg border-2 transition-all duration-200 ${
-                                                selectedSize === "1 كيلو"
-                                                ? "bg-[#4E5A3F] text-white border-[#4E5A3F]"
-                                                : "bg-white text-gray-700 border-gray-300 hover:border-[#4E5A3F]"
-                                            }`}
-                                        >
-                                            1 كيلو - {singleProduct.price?.['1 كيلو']} ر.ع
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
                         </div>
 
                         <button

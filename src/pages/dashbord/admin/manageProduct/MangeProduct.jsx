@@ -29,6 +29,23 @@ const ManageProduct = () => {
         }
     };
 
+    const getProductPrice = (product) => {
+        if (product.regularPrice) return `${product.regularPrice} ر.س`;
+        
+        if (!product.price) return 'N/A';
+        
+        if (typeof product.price === 'object') {
+            const prices = [];
+            if (product.price['500 جرام']) prices.push(`${product.price['500 جرام']} ر.س (500 جرام)`);
+            if (product.price['1 كيلو']) prices.push(`${product.price['1 كيلو']} ر.س (1 كيلو)`);
+            if (product.price.default) prices.push(`${product.price.default} ر.س`);
+            
+            return prices.join(' - ') || 'N/A';
+        }
+        
+        return `${product.price} ر.س`;
+    };
+
     const handleDeleteProduct = async (id) => {
         const confirmDelete = window.confirm("هل أنت متأكد أنك تريد حذف هذا المنتج؟");
         if (!confirmDelete) return;
@@ -36,7 +53,6 @@ const ManageProduct = () => {
         try {
             await deleteProduct(id).unwrap();
             alert("تم حذف المنتج بنجاح");
-            // إذا كانت الصفحة الحالية أصبحت فارغة بعد الحذف، نعود للصفحة السابقة
             if (products.length === 1 && currentPage > 1) {
                 setCurrentPage(currentPage - 1);
             } else {
@@ -96,7 +112,7 @@ const ManageProduct = () => {
                                                 {product.category}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                                                {product.regularPrice || (product.price ? `${product.price['500 جرام']} - ${product.price['1 كيلو']}` : 'N/A')}
+                                                {getProductPrice(product)}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
                                                 <Link

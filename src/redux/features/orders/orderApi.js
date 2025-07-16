@@ -9,6 +9,20 @@ const orderApi = createApi({
     }),
     tagTypes: ["Order"],
     endpoints: (builder) => ({
+        createCheckoutSession: builder.mutation({
+            query: (body) => ({
+                url: '/create-checkout-session',
+                method: 'POST',
+                body,
+            }),
+        }),
+        confirmPayment: builder.mutation({
+            query: (body) => ({
+                url: '/confirm-payment',
+                method: 'POST',
+                body,
+            }),
+        }),
         getOrdersByEmail: builder.query({
             query: (email) => ({
                 url: `/${email}`,
@@ -50,5 +64,14 @@ const orderApi = createApi({
     })
 })
 
-export const {useGetOrdersByEmailQuery, useGetOrderByIdQuery, useGetAllOrdersQuery, useUpdateOrderStatusMutation, useDeleteOrderMutation} = orderApi;
+export const {
+    useCreateCheckoutSessionMutation,
+    useConfirmPaymentMutation,
+    useGetOrdersByEmailQuery,
+    useGetOrderByIdQuery,
+    useGetAllOrdersQuery,
+    useUpdateOrderStatusMutation,
+    useDeleteOrderMutation
+} = orderApi;
+
 export default orderApi;

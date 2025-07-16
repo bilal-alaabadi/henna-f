@@ -7,10 +7,12 @@ const Checkout = () => {
   const [error, setError] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
+  const [country, setCountry] = useState(''); // تمت إزالة القيمة الجاهزة
   const [wilayat, setWilayat] = useState('');
+  const [description, setDescription] = useState(''); // حقل الوصف
   const { products, totalPrice } = useSelector((state) => state.cart);
   const { user } = useSelector(state => state.auth);
-  const shippingFee = 2; // رسوم الشحن
+  const shippingFee = 2;
 
   useEffect(() => {
     if (products.length === 0) {
@@ -21,58 +23,60 @@ const Checkout = () => {
   }, [products]);
 
   const makePayment = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (products.length === 0) {
-    setError("لا توجد منتجات في السلة. الرجاء إضافة منتجات قبل المتابعة إلى الدفع.");
-    return;
-  }
+    if (products.length === 0) {
+      setError("لا توجد منتجات في السلة. الرجاء إضافة منتجات قبل المتابعة إلى الدفع.");
+      return;
+    }
 
-  if (!customerName || !customerPhone || !wilayat) {
-    setError("الرجاء إدخال جميع المعلومات المطلوبة (الاسم، رقم الهاتف، الولاية)");
-    return;
-  }
+    if (!customerName || !customerPhone || !country || !wilayat) {
+      setError("الرجاء إدخال جميع المعلومات المطلوبة (الاسم، رقم الهاتف، البلد، العنوان)");
+      return;
+    }
 
-  const body = {
-    products: products.map(product => ({
-      _id: product._id, // تأكد من وجود product._id
-      name: product.name,
-      price: product.price,
-      quantity: product.quantity,
-      image: Array.isArray(product.image) ? product.image[0] : product.image
-    })),
-    customerName,
-    customerPhone,
-    wilayat,
-    email: user?.email // تأكد من وجود البريد الإلكتروني
+    const body = {
+      products: products.map(product => ({
+        _id: product._id,
+        name: product.name,
+        price: product.price,
+        quantity: product.quantity,
+        image: Array.isArray(product.image) ? product.image[0] : product.image
+      })),
+      customerName,
+      customerPhone,
+      country,
+      wilayat,
+      description, // إضافة الوصف للطلب
+      email: user?.email
+    };
+
+    try {
+      const response = await fetch(`${getBaseUrl()}/api/orders/create-checkout-session`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to create checkout session");
+      }
+
+      const session = await response.json();
+
+      if (session.paymentLink) {
+        window.location.href = session.paymentLink;
+      } else {
+        setError("حدث خطأ أثناء إنشاء رابط الدفع. الرجاء المحاولة مرة أخرى.");
+      }
+    } catch (error) {
+      console.error("Error during payment process:", error);
+      setError(error.message || "حدث خطأ أثناء عملية الدفع. الرجاء المحاولة مرة أخرى.");
+    }
   };
-
-  try {
-    const response = await fetch(`${getBaseUrl()}/api/orders/create-checkout-session`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(body)
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "Failed to create checkout session");
-    }
-
-    const session = await response.json();
-
-    if (session.paymentLink) {
-      window.location.href = session.paymentLink;
-    } else {
-      setError("حدث خطأ أثناء إنشاء رابط الدفع. الرجاء المحاولة مرة أخرى.");
-    }
-  } catch (error) {
-    console.error("Error during payment process:", error);
-    setError(error.message || "حدث خطأ أثناء عملية الدفع. الرجاء المحاولة مرة أخرى.");
-  }
-};
 
   return (
     <div className="p-4 md:p-6 max-w-6xl mx-auto flex flex-col md:flex-row gap-8">
@@ -106,20 +110,44 @@ const Checkout = () => {
             </div>
             
             <div>
-              <label className="block text-gray-700 mb-2">الولاية</label>
+              <label className="block text-gray-700 mb-2">البلد</label>
+              <input
+                type="text"
+                className="w-full p-2 border rounded-md"
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                required
+                placeholder="أدخل اسم البلد"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-gray-700 mb-2">العنوان</label>
               <input
                 type="text"
                 className="w-full p-2 border rounded-md"
                 value={wilayat}
                 onChange={(e) => setWilayat(e.target.value)}
                 required
+                placeholder="الرجاء إدخال العنوان كاملاً"
+              />
+            </div>
+
+            <div>
+              <label className="block text-gray-700 mb-2">وصف إضافي (اختياري)</label>
+              <textarea
+                className="w-full p-2 border rounded-md"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="أي ملاحظات أو تفاصيل إضافية عن الطلب"
+                rows="3"
               />
             </div>
           </div>
           
           <button
             type="submit"
-            className="bg-[#799b52] text-white px-6 py-3 rounded-md  w-full"
+            className="bg-[#799b52] text-white px-6 py-3 rounded-md w-full"
             disabled={products.length === 0}
           >
             إتمام الطلب
@@ -153,15 +181,15 @@ const Checkout = () => {
           <h3 className="text-lg font-semibold text-gray-800 mb-4">دفع ثواني</h3>
           <button
             onClick={makePayment}
-            className="w-full bg-[#799b52] text-white px-4 py-2 rounded-md  transition-colors duration-300 flex items-center justify-center gap-2"
+            className="w-full bg-[#799b52] text-white px-4 py-2 rounded-md transition-colors duration-300 flex items-center justify-center gap-2"
             disabled={products.length === 0}
           >
-            <RiBankCardLine className="text-xl " />
+            <RiBankCardLine className="text-xl" />
             <span>الدفع باستخدام ثواني</span>
           </button>
           <p className="mt-4 text-sm text-gray-600">
             سيتم استخدام بياناتك الشخصية لمعالجة طلبك، ودعم تجربتك عبر هذا الموقع، ولأغراض أخرى موضحة في{" "}
-            <a  className="text-blue-600 hover:underline">سياسة الخصوصية</a>.
+            <a className="text-blue-600 hover:underline">سياسة الخصوصية</a>.
           </p>
         </div>
       </div>

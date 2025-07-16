@@ -1,3 +1,4 @@
+// ProductCards.jsx
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import RatingStars from '../../components/RatingStars';
@@ -6,83 +7,35 @@ import { addToCart } from '../../redux/features/cart/cartSlice';
 
 const ProductCards = ({ products }) => {
     const dispatch = useDispatch();
-    const [activeSizes, setActiveSizes] = useState({});
 
-    const handleAddToCart = (product, size = '500 جرام') => {
-        const price = product.category === 'حناء بودر' 
-            ? product.price?.[size] || 0
-            : product.regularPrice || product.price || 0;
-            
+    const getProductPrice = (product) => {
+        if (!product) return 0;
+        
+        // إذا كان السعر كائنًا (مثل الحناء)
+        if (typeof product.price === 'object' && product.price !== null) {
+            return product.price['500 جرام'] || 0; // نستخدم 500 جرام كحجم افتراضي
+        }
+        
+        // إذا كان السعر رقمًا مباشرًا
+        return product.regularPrice || product.price || 0;
+    };
+
+    const handleAddToCart = (product) => {
+        const price = getProductPrice(product);
+        
         dispatch(addToCart({
             ...product,
-            price: price,
-            selectedSize: product.category === 'حناء بودر' ? size : null
-        }));
-    };
-
-    const handleSizeHover = (productId, size) => {
-        setActiveSizes(prev => ({
-            ...prev,
-            [productId]: size
-        }));
-    };
-
-    const handleMouseLeave = (productId) => {
-        setActiveSizes(prev => ({
-            ...prev,
-            [productId]: null
+            price: price
         }));
     };
 
     const renderPrice = (product) => {
-        if (!product) return null;
-
-        if (product.category === 'حناء بودر') {
-            const activeSize = activeSizes[product._id];
-            const currentPrice = activeSize ? product.price?.[activeSize] : product.price?.['500 جرام'];
-            
-            return (
-                <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                        <span className="font-medium text-lg">
-                            {currentPrice || 0} ر.ع
-                        </span>
-                        <div className="flex space-x-2">
-                            <button
-                                onMouseEnter={() => handleSizeHover(product._id, '500 جرام')}
-                                onMouseLeave={() => handleMouseLeave(product._id)}
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    handleAddToCart(product, '500 جرام');
-                                }}
-                                className={`px-3 py-1 rounded-full text-sm ${activeSizes[product._id] === '500 جرام' ? 'bg-[#3D4B2E] text-white' : 'bg-gray-200'}`}
-                            >
-                                500 جرام
-                            </button>
-                            <button
-                                onMouseEnter={() => handleSizeHover(product._id, '1 كيلو')}
-                                onMouseLeave={() => handleMouseLeave(product._id)}
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    handleAddToCart(product, '1 كيلو');
-                                }}
-                                className={`px-3 py-1 rounded-full text-sm ${activeSizes[product._id] === '1 كيلو' ? 'bg-[#3D4B2E] text-white' : 'bg-gray-200'}`}
-                            >
-                                1 كيلو
-                            </button>
-                        </div>
-                    </div>
-                    {product.oldPrice && (
-                        <s className="text-gray-500 text-sm">{product.oldPrice} ر.ع</s>
-                    )}
-                </div>
-            );
-        }
+        const price = getProductPrice(product);
 
         return (
             <div className="space-y-1">
                 <div className="font-medium text-lg">
-                    {product.regularPrice || product.price || 0} ر.ع
+                    {price} ر.ع
                 </div>
                 {product.oldPrice && (
                     <s className="text-gray-500 text-sm">{product.oldPrice} ر.ع</s>
@@ -97,7 +50,6 @@ const ProductCards = ({ products }) => {
                 <div 
                     key={product._id} 
                     className='product__card bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300'
-                    onMouseLeave={() => handleMouseLeave(product._id)}
                 >
                     <div className='relative'>
                         <Link to={`/shop/${product._id}`}>
@@ -105,7 +57,7 @@ const ProductCards = ({ products }) => {
                                 <img
                                     src={product.image?.[0] || "https://via.placeholder.com/300"}
                                     alt={product.name || "صورة المنتج"}
-                                    className={`w-full h-full object-cover transition-transform duration-500 ${activeSizes[product._id] ? 'scale-110' : 'scale-100'}`}
+                                    className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
                                     onError={(e) => {
                                         e.target.src = "https://via.placeholder.com/300";
                                         e.target.alt = "صورة المنتج غير متوفرة";
@@ -118,7 +70,7 @@ const ProductCards = ({ products }) => {
                             <button
                                 onClick={(e) => {
                                     e.preventDefault();
-                                    handleAddToCart(product, activeSizes[product._id] || '500 جرام');
+                                    handleAddToCart(product);
                                 }}
                                 className="bg-[#3D4B2E] p-2 text-white hover:bg-[#4E5A3F] rounded-full shadow-md transition-colors duration-300"
                             >
@@ -133,7 +85,6 @@ const ProductCards = ({ products }) => {
                         
                         {renderPrice(product)}
                         
-                       
                     </div>
                 </div>
             ))}
